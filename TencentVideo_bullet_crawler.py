@@ -23,36 +23,52 @@ engine = create_engine(db_url)
 # 创建数据库链接
 
 
-nowtime = round(time.time()*1000)
-headers = {
-    'User-Agent': 'Googlebot'
-}
-# 初始为15，7245 为视频秒长，链接以三十秒递增\
-df = pd.DataFrame()
-content=[]
-upcount=[]
-timepoint=[]
-opername = []
-uservip = []
-page=[]
-for i in range(15, 2640, 30):
-    nowtime = round(time.time() * 1000)
-    print(round(i/2640*100,2),'%')
-    url = "https://mfm.video.qq.com/danmu?otype=json&target_id=7771314319%26vid%3Da0042ceiy5v&session_key=0%2C0%2C0&timestamp="+str(i)+"&_="+str(nowtime)
-    print(url)
-    html = requests.get(url, headers=headers).json()
-    time.sleep(1)
-    for j in html['comments']:
-        content.append(j['content'])
-        upcount.append(j['upcount'])
-        timepoint.append(j['timepoint'])
-        opername.append(j['opername'])
-        uservip.append(j['uservip_degree'])
-        page.append(i)
 
+def get_bullet(set_length,target_id,session_key,setname):
 
-    crawler_data = pd.DataFrame(
-        {'content': content, 'upcount':upcount,'timepoint':timepoint,'opername':opername,'uservip':uservip,'page':page})
-    filename='且试天下'+'s01e01'+'bullet'
-crawler_data.to_sql(filename, engine)
-print("finish")
+    headers = {
+        'User-Agent': 'Googlebot'
+    }
+    # 初始为15，7245 为视频秒长，链接以三十秒递增\
+    content = []
+    upcount = []
+    timepoint = []
+    opername = []
+    uservip = []
+    page = []
+    for i in range(15, int(set_length)*60, 30):
+        nowtime = round(time.time() * 1000)
+        print(round(i / (set_length*60) * 100, 2), '%')
+        url = "https://mfm.video.qq.com/danmu?otype=json&target_id="+str(target_id)+"&session_key="+str(session_key)+"&timestamp=" + str(
+            i) + "&_=" + str(nowtime)
+        print(url)
+        html = requests.get(url, headers=headers).json(strict=False)
+        # print(html)
+        time.sleep(1)
+        for j in html['comments']:
+            content.append(j['content'])
+
+            upcount.append(j['upcount'])
+            timepoint.append(j['timepoint'])
+            opername.append(j['opername'])
+            uservip.append(j['uservip_degree'])
+            page.append(i)
+
+        crawler_data = pd.DataFrame(
+            {'content': content, 'upcount': upcount, 'timepoint': timepoint, 'opername': opername, 'uservip': uservip,
+             'page': page})
+        filename = '且试天下' + setname + 'bullet'
+
+    crawler_data.to_sql(filename, engine)
+    print("数据抓取&写入作业完毕！")
+
+if __name__ == "__main__":
+    t1 = time.time()
+    set_length = 44 #该集时长(mins)
+    target_id = '7771314486%26vid%3Dv00423206va'
+    session_key = '0%2C228%2C1651040661'
+    setname = 's01e02' #建议小写
+    get_bullet(set_length=set_length,target_id=target_id,session_key=session_key,setname=setname)
+    t2 = time.time()
+    t3 = round(t2 - t1, 2)
+    print('------本次抓取耗时:%s秒------' % t3)
